@@ -262,6 +262,7 @@ function editName(){
 function saveName(){
   const v=$('nameInput').value.trim();
   if(v){trackerName=v;localStorage.setItem('roth_name',v);}
+  syncOp('setName', { name: v });
   $('nameText').textContent=trackerName;
   $('nameInput').style.display='none';
   $('nameDisplay').style.display='flex';
@@ -279,6 +280,7 @@ async function loadJobs(){
   try{
     const data=await callSheet({action:'getAll'});
     jobs=data.jobs||[];
+    if (data.name) { trackerName = data.name; $('nameText').textContent = trackerName; }
     setSyncStatus('ok','Synced');hideErr();
   }catch(e){
     setSyncStatus('err','Error');
