@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roth IRA Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#166534;--green-mid:#16a34a;--green-light:#dcfce7;
+  --bg:#f8f7f4;--card:#fff;--text:#111827;--muted:#6b7280;
+  --border:rgba(0,0,0,0.08);--danger:#dc2626;--radius:16px;--rsm:10px;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:4rem;-webkit-text-size-adjust:100%}
+
+/* Setup */
+#setupScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.setup-card{background:var(--card);border-radius:var(--radius);padding:2rem;max-width:400px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.setup-logo{width:48px;height:48px;background:var(--green-light);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1.25rem}
+.setup-title{font-size:1.4rem;font-weight:700;margin-bottom:6px}
+.setup-desc{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:1.25rem}
+.setup-steps{background:var(--bg);border-radius:var(--rsm);padding:1rem;margin-bottom:1.25rem;font-size:13px;line-height:1.9;color:var(--muted)}
+.setup-steps strong{color:var(--text)}
+
+/* Header */
+.header{background:var(--green);color:#fff;padding:2.5rem 1.25rem 3.5rem}
+.header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.header-year{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
+.sync-pill{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.75)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.35);flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:#86efac}
+.sync-dot.err{background:#fca5a5}
+.sync-dot.busy{background:#fde68a;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.header-name{font-size:1.75rem;font-weight:700;display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.edit-icon{opacity:.4;font-size:14px}
+.name-input{font-family:inherit;font-size:1.75rem;font-weight:700;background:none;border:none;border-bottom:2px solid rgba(255,255,255,.4);color:#fff;outline:none;width:100%;max-width:280px;display:none;padding-bottom:2px}
+.name-input::placeholder{color:rgba(255,255,255,.3)}
+
+/* Cards */
+.cards-wrap{padding:0 1.1rem;margin-top:-1.75rem;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--card);border-radius:var(--radius);padding:1rem;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.card-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+.card-val{font-size:1.35rem;font-weight:700;color:var(--text);line-height:1}
+.card-note{font-size:10px;color:var(--muted);margin-top:4px}
+.card.chase{background:#fffbeb;border:1px solid #fde68a}
+.card.chase .card-val{color:#b45309}
+.card.chase .card-lbl{color:#92400e;opacity:.7}
+.card.all-paid{background:#f0fdf4;border:1px solid #bbf7d0}
+.card.all-paid .card-val{color:var(--green-mid)}
+.card.hl{background:var(--green)}
+.card.hl .card-lbl{color:rgba(255,255,255,.55)}
+.card.hl .card-val{color:#fff}
+.card.hl .card-note{color:rgba(255,255,255,.45)}
+
+/* Section */
+.section{margin:1.25rem 1.1rem 0}
+.section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+
+/* Add toggle */
+.add-toggle{width:100%;padding:14px;background:var(--card);border:1.5px dashed rgba(0,0,0,.15);border-radius:var(--radius);font-size:15px;font-weight:600;font-family:inherit;color:var(--green);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.add-toggle.open{border-style:solid;border-color:var(--green-mid)}
+.add-toggle:active{background:var(--green-light)}
+
+/* Form */
+.form-panel{background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-top:10px}
+.form-row{display:flex;gap:10px;margin-bottom:12px}
+.form-field{flex:1}
+.form-field label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
+.form-field input{width:100%;padding:12px 13px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:16px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none;transition:border-color .15s}
+.form-field input:focus{border-color:var(--green-mid);background:#fff}
+.form-preview{background:var(--green-light);border-radius:8px;padding:9px 13px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:12px;display:none}
+.btn-primary{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn-primary:active{background:#14532d}
+
+/* Job cards */
+.jobs-list{display:flex;flex-direction:column;gap:8px}
+.job-card{background:var(--card);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.job-main{display:flex;align-items:flex-start;padding:.9rem 1rem;gap:10px}
+.job-info{flex:1;min-width:0}
+.job-client{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.job-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.job-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.job-amount{font-size:16px;font-weight:700}
+.job-actions{display:flex;align-items:center;gap:6px}
+.status-badge{font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;border:none;font-family:inherit}
+.status-badge.unpaid{background:#fef3c7;color:#92400e}
+.status-badge.venmo{background:#dbeafe;color:#1e40af}
+.status-badge.cash{background:#dcfce7;color:#14532d}
+.status-badge.other{background:#f3f4f6;color:#374151}
+.btn-del{background:none;border:none;color:#d1d5db;font-size:20px;line-height:1;cursor:pointer;padding:2px;-webkit-tap-highlight-color:transparent}
+.btn-del:active{color:var(--danger)}
+.picker{display:none;padding:10px 1rem;border-top:.5px solid var(--border);gap:8px}
+.picker.open{display:flex}
+.pick-btn{flex:1;min-width:0;padding:7px 4px;border-radius:8px;border:1.5px solid;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
+.pick-btn.unpaid{border-color:#fde68a;background:#fffbeb;color:#92400e}
+.pick-btn.venmo{border-color:#bfdbfe;background:#eff6ff;color:#1e40af}
+.pick-btn.cash{border-color:#bbf7d0;background:#f0fdf4;color:#14532d}
+.pick-btn.other{border-color:#e5e7eb;background:#f9fafb;color:#374151}
+.pick-btn.active{border-width:2px}
+.pick-btn:active{opacity:.7}
+
+/* Growth */
+.growth-panel{background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.growth-big{font-size:2rem;font-weight:700;color:var(--green);line-height:1;margin-bottom:4px}
+.growth-sub{font-size:12px;color:var(--muted);margin-bottom:1rem}
+.age-row{display:flex;align-items:center;gap:10px;margin-bottom:1rem;font-size:13px;color:var(--muted)}
+.age-row input[type=range]{flex:1;accent-color:var(--green)}
+.age-val{font-weight:700;color:var(--green);min-width:20px}
+.chart-wrap{position:relative;width:100%;height:180px}
+.tax-note{background:var(--green-light);border-radius:10px;padding:10px 12px;font-size:12px;color:#166534;font-weight:500;margin-top:1rem;line-height:1.5}
+
+/* Misc */
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:2rem 1rem;background:var(--card);border-radius:var(--radius)}
+.skeleton{background:#f0f0ed;height:78px;border-radius:12px;margin-bottom:8px;animation:shimmer 1.2s infinite}
+@keyframes shimmer{0%,100%{opacity:1}50%{opacity:.5}}
+.err-banner{margin:1rem 1.1rem 0;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;font-size:13px;color:#991b1b;font-weight:500;display:none}
+.settings-row{margin:2rem 1.1rem 0;text-align:center}
+.settings-link{font-size:12px;color:var(--muted);background:none;border:none;font-family:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+</style>
+</head>
+<body>
+
+<!-- Setup -->
+<div id="setupScreen" style="display:none">
+  <div class="setup-card">
+    <div class="setup-logo">💰</div>
+    <div class="setup-title">Roth IRA Tracker</div>
+    <div class="setup-desc">Connects to Google Sheets so data is shared across devices — you and your daughter see the same thing.</div>
+    <div class="setup-steps">
+      <strong>One-time setup (~5 min):</strong><br>
+      1. Open <strong>roth-tracker.gs</strong> and follow the instructions at the top<br>
+      2. Deploy it as a Google Apps Script web app<br>
+      3. Copy the web app URL and paste it below
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px">Apps Script URL</label>
+      <input id="urlInput" type="url" placeholder="https://script.google.com/macros/s/..."
+        style="width:100%;padding:12px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
+    </div>
+    <button class="btn-primary" onclick="connect()">Connect →</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appScreen" style="display:none">
+  <div class="header">
+    <div class="header-row">
+      <div class="header-year">2025 · Roth IRA</div>
+      <div class="sync-pill"><span class="sync-dot" id="syncDot"></span><span id="syncText">–</span></div>
+    </div>
+    <div class="header-name" id="nameDisplay" onclick="editName()">
+      <span id="nameText">Your Name</span>
+      <span class="edit-icon">✏</span>
+    </div>
+    <input class="name-input" id="nameInput" placeholder="Enter name"
+      onblur="saveName()" onkeydown="if(event.key==='Enter')this.blur()">
+  </div>
+
+  <div class="err-banner" id="errBanner"></div>
+  <div class="cards-wrap" id="cardsWrap"></div>
+
+  <div class="section">
+    <button class="add-toggle" id="addToggle" onclick="toggleForm()">+ Log a job</button>
+    <div id="addForm" style="display:none">
+      <div class="form-panel">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Date</label>
+            <input type="date" id="fDate">
+          </div>
+          <div class="form-field">
+            <label>Who for</label>
+            <input type="text" id="fClient" placeholder="The Smiths" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Start</label>
+            <input type="time" id="fStart" oninput="previewCalc()">
+          </div>
+          <div class="form-field">
+            <label>End</label>
+            <input type="time" id="fEnd" oninput="previewCalc()">
+          </div>
+          <div class="form-field">
+            <label>Amount $</label>
+            <input type="number" id="fAmt" placeholder="0" min="0" step="0.01" inputmode="decimal" oninput="previewCalc()">
+          </div>
+        </div>
+        <div class="form-preview" id="formPreview"></div>
+        <button class="btn-primary" onclick="addJob()">Add job</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Job history</div>
+    <div id="jobsList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">What this grows to</div>
+    <div class="growth-panel">
+      <div class="growth-big" id="gValue">$0</div>
+      <div class="growth-sub" id="gSub">at age 65 · 7% annual return</div>
+      <div class="age-row">
+        <span>Current age:</span>
+        <input type="range" id="ageSlider" min="12" max="22" value="16" step="1" oninput="onAgeChange(this.value)">
+        <span class="age-val" id="ageVal">16</span>
+      </div>
+      <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
+      <div class="tax-note">Babysitting for private families = $0 federal tax at your income level. Your full earnings count toward the Roth.</div>
+    </div>
+  </div>
+
+  <div class="settings-row">
+    <button class="settings-link" onclick="goSetup()">Change Sheet URL</button>
+  </div>
+</div>
+
+<script>
+const MATCH=.5,LIMIT=7000,RATE=.07,RETIRE=65;
+const SL={unpaid:'Unpaid',venmo:'Venmo',cash:'Cash',other:'Other'};
+
+let jobs=[],sheetUrl='',trackerName='Your Name',currentAge=16;
+let activePicker=null,showForm=false,growthChart=null;
+
+function boot(){
+  sheetUrl=ls('roth_url')||'';
+  trackerName=ls('roth_name')||'Your Name';
+  currentAge=parseInt(ls('roth_age')||'16');
+  if(!sheetUrl){show('setupScreen');return;}
+  show('appScreen');
+  $('nameText').textContent=trackerName;
+  $('ageSlider').value=currentAge;
+  $('ageVal').textContent=currentAge;
+  loadJobs();
+}
+
+function connect(){
+  const url=$('urlInput').value.trim();
+  if(!url.startsWith('https://')){alert('Please enter a valid URL starting with https://');return;}
+  localStorage.setItem('roth_url',url);
+  sheetUrl=url;
+  hide('setupScreen');show('appScreen');
+  $('nameText').textContent=trackerName;
+  $('ageSlider').value=currentAge;
+  $('ageVal').textContent=currentAge;
+  loadJobs();
+}
+
+function goSetup(){$('urlInput').value=sheetUrl;hide('appScreen');show('setupScreen');}
+
+function editName(){
+  $('nameDisplay').style.display='none';
+  const inp=$('nameInput');inp.style.display='block';
+  inp.value=trackerName==='Your Name'?'':trackerName;inp.focus();
+}
+function saveName(){
+  const v=$('nameInput').value.trim();
+  if(v){trackerName=v;localStorage.setItem('roth_name',v);}
+  $('nameText').textContent=trackerName;
+  $('nameInput').style.display='none';
+  $('nameDisplay').style.display='flex';
+}
+
+async function callSheet(params){
+  const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const res=await fetch(sheetUrl+'?'+qs+'&_cb='+Date.now(),{redirect:'follow'});
+  return res.json();
+}
+
+async function loadJobs(){
+  setSyncStatus('busy','Loading…');
+  $('jobsList').innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+  try{
+    const data=await callSheet({action:'getAll'});
+    jobs=data.jobs||[];
+    setSyncStatus('ok','Synced');hideErr();
+  }catch(e){
+    setSyncStatus('err','Error');
+    showErr('Could not connect to Google Sheet. Check the URL in Settings and your internet connection.');
+  }
+  renderAll();
+}
+
+async function syncOp(action,params){
+  setSyncStatus('busy','Saving…');
+  try{
+    await callSheet({action,...params});
+    setSyncStatus('ok','Saved');hideErr();
+    setTimeout(()=>setSyncStatus('ok','Synced'),2000);
+  }catch(e){
+    setSyncStatus('err','Sync failed');
+    showErr('Could not save to Google Sheet. Change is shown locally but may not be saved.');
+  }
+}
+
+async function addJob(){
+  const date=$('fDate').value,client=$('fClient').value.trim();
+  const start=$('fStart').value,end=$('fEnd').value;
+  const amt=parseFloat($('fAmt').value);
+  if(!date){alert('Please pick a date.');return;}
+  if(!client){alert('Please enter who you babysat for.');return;}
+  if(!start||!end){alert('Please enter start and end times.');return;}
+  if(!amt||amt<=0){alert('Please enter the amount you were paid.');return;}
+  const hrs=calcHours(start,end);
+  if(hrs<=0){alert('End time must be after start time.');return;}
+  const job={
+    id:Date.now()+'',date,client,start,end,
+    hours:parseFloat(hrs.toFixed(2)),
+    amount:amt,
+    rate:parseFloat((amt/hrs).toFixed(2)),
+    status:'unpaid'
+  };
+  jobs.unshift(job);
+  toggleForm(false);clearForm();renderAll();
+  await syncOp('add',{data:JSON.stringify(job)});
+}
+
+async function deleteJob(id){
+  if(!confirm('Remove this job?'))return;
+  jobs=jobs.filter(j=>j.id!==id);
+  activePicker=null;renderAll();
+  await syncOp('delete',{id});
+}
+
+async function setStatus(id,status){
+  const job=jobs.find(j=>j.id===id);
+  if(!job)return;
+  job.status=status;activePicker=null;renderAll();
+  await syncOp('updateStatus',{id,status});
+}
+
+function toggleForm(force){
+  showForm=force!==undefined?force:!showForm;
+  $('addForm').style.display=showForm?'block':'none';
+  $('addToggle').textContent=showForm?'✕ Cancel':'+ Log a job';
+  $('addToggle').classList.toggle('open',showForm);
+  if(showForm){$('fDate').value=todayStr();$('fClient').focus();}
+}
+
+function clearForm(){
+  ['fDate','fClient','fStart','fEnd','fAmt'].forEach(id=>$(id).value='');
+  $('formPreview').style.display='none';
+}
+
+function previewCalc(){
+  const start=$('fStart').value,end=$('fEnd').value,amt=parseFloat($('fAmt').value);
+  const prev=$('formPreview');
+  if(start&&end&&amt>0){
+    const hrs=calcHours(start,end);
+    if(hrs>0){prev.textContent=hrs.toFixed(1)+' hrs · $'+(amt/hrs).toFixed(2)+'/hr';prev.style.display='block';return;}
+  }
+  prev.style.display='none';
+}
+
+function openPicker(id){activePicker=activePicker===id?null:id;renderJobs();}
+
+function onAgeChange(v){
+  currentAge=+v;$('ageVal').textContent=v;
+  localStorage.setItem('roth_age',v);
+  renderChart(compute().roth);
+}
+
+function compute(){
+  const earned=jobs.reduce((s,j)=>s+j.amount,0);
+  const unpaid=jobs.filter(j=>j.status==='unpaid').reduce((s,j)=>s+j.amount,0);
+  const totalHrs=jobs.reduce((s,j)=>s+j.hours,0);
+  const avgRate=totalHrs>0?earned/totalHrs:0;
+  const match=earned*MATCH,roth=Math.min(earned,LIMIT),net=earned-roth+match;
+  return{earned,unpaid,totalHrs,avgRate,match,roth,net};
+}
+
+function renderAll(){const c=compute();renderCards(c);renderJobs();renderChart(c.roth);}
+
+function renderCards(c){
+  const allPaid=jobs.length>0&&c.unpaid===0;
+  const chase=c.unpaid>0;
+  $('cardsWrap').innerHTML=`
+    <div class="card ${chase?'chase':allPaid?'all-paid':''}">
+      <div class="card-lbl">${chase?'⚠ Unpaid':allPaid?'✓ All paid':'Unpaid'}</div>
+      <div class="card-val">${fmt(c.unpaid)}</div>
+      <div class="card-note">${chase?'chase dad for this':allPaid?"you're all caught up":'–'}</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Total earned</div>
+      <div class="card-val">${fmt(c.earned)}</div>
+      <div class="card-note">${jobs.length} job${jobs.length!==1?'s':''} this year</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Hours worked</div>
+      <div class="card-val">${c.totalHrs.toFixed(1)}</div>
+      <div class="card-note">${c.avgRate>0?'$'+c.avgRate.toFixed(2)+'/hr avg':'–'}</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Dad's match</div>
+      <div class="card-val">${fmt(c.match)}</div>
+      <div class="card-note">50% cash to you</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Roth capacity</div>
+      <div class="card-val">${fmt(c.roth)}</div>
+      <div class="card-note">${c.earned>=LIMIT?'⚠ $7,000 limit hit':'of $7,000/yr'}</div>
+    </div>
+    <div class="card hl">
+      <div class="card-lbl">Your net cash</div>
+      <div class="card-val">${fmt(c.net)}</div>
+      <div class="card-note">after investing + match</div>
+    </div>`;
+}
+
+function renderJobs(){
+  const el=$('jobsList');
+  if(!jobs.length){el.innerHTML='<div class="empty">No jobs yet. Tap "+ Log a job" above.</div>';return;}
+  el.innerHTML='<div class="jobs-list">'+jobs.map(j=>{
+    const btns=['unpaid','venmo','cash','other'].map(s=>
+      `<button class="pick-btn ${s}${j.status===s?' active':''}" onclick="setStatus('${j.id}','${s}')">${SL[s]}</button>`
+    ).join('');
+    return`<div class="job-card">
+      <div class="job-main">
+        <div class="job-info">
+          <div class="job-client">${esc(j.client)}</div>
+          <div class="job-meta">${fmtDate(j.date)} · ${j.hours.toFixed(1)} hrs · $${j.rate.toFixed(2)}/hr</div>
+        </div>
+        <div class="job-right">
+          <div class="job-amount">${fmt(j.amount)}</div>
+          <div class="job-actions">
+            <button class="status-badge ${j.status}" onclick="openPicker('${j.id}')">${SL[j.status]} ▾</button>
+            <button class="btn-del" onclick="deleteJob('${j.id}')">×</button>
+          </div>
+        </div>
+      </div>
+      <div class="picker${activePicker===j.id?' open':''}">${btns}</div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function renderChart(principal){
+  const yrs=RETIRE-currentAge,labels=[],data=[];
+  for(let i=0;i<=yrs;i++){labels.push(currentAge+i);data.push(Math.round(principal*Math.pow(1+RATE,i)));}
+  const final=data[data.length-1]||0,mult=principal>0?(final/principal).toFixed(1):'0';
+  $('gValue').textContent=fmt(final);
+  $('gSub').textContent=mult+'x multiplier · estimated value at age 65 · 7%/yr';
+  if(growthChart)growthChart.destroy();
+  growthChart=new Chart($('growthChart'),{
+    type:'line',
+    data:{labels,datasets:[{data,borderColor:'#166534',backgroundColor:'rgba(22,101,52,.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:.4}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+      scales:{
+        x:{ticks:{maxTicksLimit:7,color:'#9ca3af',font:{size:11,family:'Plus Jakarta Sans'}},grid:{display:false},border:{display:false}},
+        y:{ticks:{callback:v=>v>=1000?'$'+(v/1000|0)+'k':'$'+v,color:'#9ca3af',font:{size:11,family:'Plus Jakarta Sans'},maxTicksLimit:5},grid:{color:'#f3f4f6'},border:{display:false}}
+      }
+    }
+  });
+}
+
+function setSyncStatus(state,text){$('syncDot').className='sync-dot '+state;$('syncText').textContent=text;}
+function showErr(msg){const b=$('errBanner');b.textContent=msg;b.style.display='block';}
+function hideErr(){$('errBanner').style.display='none';}
+
+const $=id=>document.getElementById(id);
+const show=id=>$(id).style.display='block';
+const hide=id=>$(id).style.display='none';
+const ls=key=>localStorage.getItem(key);
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function fmtDate(d){
+  try{return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+  catch(e){return d;}
+}
+function calcHours(start,end){
+  const[sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number);
+  return((eh*60+em)-(sh*60+sm))/60;
+}
+function todayStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+boot();
+</script>
+</body>
+</html>
