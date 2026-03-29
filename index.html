@@ -87,7 +87,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .job-actions{display:flex;align-items:center;gap:6px}
 .status-badge{font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;border:none;font-family:inherit}
 .status-badge.unpaid{background:#fef3c7;color:#92400e}
-.status-badge.venmo{background:#dbeafe;color:#1e40af}
+.status-badge.bank{background:#dbeafe;color:#1e40af}
 .status-badge.cash{background:#dcfce7;color:#14532d}
 .status-badge.other{background:#f3f4f6;color:#374151}
 .btn-del{background:none;border:none;color:#d1d5db;font-size:20px;line-height:1;cursor:pointer;padding:2px;-webkit-tap-highlight-color:transparent}
@@ -96,7 +96,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .picker.open{display:flex}
 .pick-btn{flex:1;min-width:0;padding:7px 4px;border-radius:8px;border:1.5px solid;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
 .pick-btn.unpaid{border-color:#fde68a;background:#fffbeb;color:#92400e}
-.pick-btn.venmo{border-color:#bfdbfe;background:#eff6ff;color:#1e40af}
+.pick-btn.bank{border-color:#bfdbfe;background:#eff6ff;color:#1e40af}
 .pick-btn.cash{border-color:#bbf7d0;background:#f0fdf4;color:#14532d}
 .pick-btn.other{border-color:#e5e7eb;background:#f9fafb;color:#374151}
 .pick-btn.active{border-width:2px}
@@ -223,7 +223,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 <script>
 const MATCH=.5,LIMIT=7000,RATE=.07,RETIRE=65;
-const SL={unpaid:'Unpaid',venmo:'Venmo',cash:'Cash',other:'Other'};
+const SL={unpaid:'Unpaid',bank:'Bank',cash:'Cash',other:'Other'};
 
 let jobs=[],sheetUrl='',trackerName='Your Name',currentAge=16;
 let activePicker=null,showForm=false,growthChart=null;
@@ -419,7 +419,7 @@ function renderJobs(){
   const el=$('jobsList');
   if(!jobs.length){el.innerHTML='<div class="empty">No jobs yet. Tap "+ Log a job" above.</div>';return;}
   el.innerHTML='<div class="jobs-list">'+jobs.map(j=>{
-    const btns=['unpaid','venmo','cash','other'].map(s=>
+    const btns=['unpaid','bank','cash','other'].map(s=>
       `<button class="pick-btn ${s}${j.status===s?' active':''}" onclick="setStatus('${j.id}','${s}')">${SL[s]}</button>`
     ).join('');
     return`<div class="job-card">
