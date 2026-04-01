@@ -456,6 +456,7 @@ function renderJobs(){
   const byYear={};
   jobs.forEach(j=>{const yr=jobYear(j);if(!byYear[yr])byYear[yr]=[];byYear[yr].push(j);});
   const years=Object.keys(byYear).map(Number).sort((a,b)=>b-a);
+  years.forEach(yr => byYear[yr].sort((a,b) => b.date.localeCompare(a.date)));
 
   let html='<div class="jobs-list">';
   years.forEach(yr=>{
