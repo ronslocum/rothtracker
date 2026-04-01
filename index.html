@@ -195,7 +195,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
           </div>
         </div>
         <div class="form-preview" id="formPreview"></div>
-        <button class="btn-primary" onclick="addJob()">Add job</button>
+        <button class="btn-primary" id="addBtn" onclick="addJob()">Add job</button>
       </div>
     </div>
   </div>
@@ -308,6 +308,7 @@ async function syncOp(action,params){
 }
 
 async function addJob(){
+  $('addBtn').disabled = true;
   const date=$('fDate').value,client=$('fClient').value.trim();
   const start=$('fStart').value,end=$('fEnd').value,amt=parseFloat($('fAmt').value);
   if(!date){alert('Please pick a date.');return;}
@@ -326,6 +327,7 @@ async function addJob(){
   jobs.unshift(job);
   toggleForm(false);clearForm();renderAll();
   await syncOp('add',{data:JSON.stringify(job)});
+  $('addBtn').disabled = false;
 }
 
 async function deleteJob(id){
